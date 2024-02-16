@@ -20,64 +20,58 @@ import com.example.learningp.learningp.mapper.UserMapper;
 import com.example.learningp.learningp.repository.RoleRepository;
 import com.example.learningp.learningp.repository.UserRepository;
 
+import lombok.extern.slf4j.Slf4j;
+
 
 
 @Service
+@Slf4j
 public class UserService {
-	private static final Logger logger = LoggerFactory.getLogger(UserService.class);
-	
-   @Autowired
-   UserRepository userRepository;
-   
-   @Autowired
-   RoleRepository roleRepository;
-   
-   @Autowired
-   UserMapper userMapper;
-   
-   public ResponseEntity<?> registerUser(RegisterUserDto registerUser){
-	   Map<String, String> response = new HashMap<>();
-	   Optional<Role> defaultRole = roleRepository.findByRoleType("LEARNER");
-	   
-	   HashSet<Role> roles = new HashSet<>();
-	   roles.add(defaultRole.get());
-	   registerUser.setRoles(roles);
-	   
-	   User newUser = userMapper.registerUserDtoToUser(registerUser);
-	   
-	   try {
-		    userRepository.save(newUser);
-		    response.put("Message", "User registered successfully.");
-		    logger.info("User registered successfully: {}", newUser.getEmail());
-		    return new ResponseEntity<>(response, HttpStatus.CREATED);
-	   }catch(Exception e) {
-		   logger.error("Failed to register user.", e);
-		   response.put("Error", "User already exists");
-		   return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-	   }
-   }
-   
-   public ResponseEntity<?> loginUser(LoginUserDto loginUser){
-	   HashMap<String, String> response = new HashMap<>();
-	   
-	   try {
-		   User user = userRepository.findByEmail(loginUser.getEmail());
-		   RegisterUserDto userDetails = userMapper.userToRegisterUserDto(user);
-		   
-		   if(userDetails.getPassword().equals(loginUser.getPassword())) {
-			   response.put("Message", "User logged in Successfully");
-			   logger.info("User logged in successfully: {}", loginUser.getEmail());
-			   return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
-		   }
-		   else {
-			   response.put("Message", "User authentication failed");
-			   logger.warn("User authentication failed for email: {}", loginUser.getEmail());
-			   return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-		   }
-	   } catch(Exception e) {
-		   response.put("Message", "Authentication Error");
-		   logger.error("Error occurred during user authentication.", e);
-		   return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-	   }
-   }
+
+	@Autowired
+	UserRepository userRepository;
+
+	@Autowired
+	RoleRepository roleRepository;
+
+	@Autowired
+	UserMapper userMapper;
+
+	public boolean registerUser(RegisterUserDto registerUser) {
+		Optional<Role> defaultRole = roleRepository.findByRoleType("LEARNER");
+
+		HashSet<Role> roles = new HashSet<>();
+		roles.add(defaultRole.get());
+		registerUser.setRoles(roles);
+
+		User newUser = userMapper.registerUserDtoToUser(registerUser);
+
+		try {
+			userRepository.save(newUser);
+			log.info("User registered successfully: {}", newUser.getEmail());
+			return true;
+		} catch (Exception e) {
+			log.error("Failed to register user.", e);
+			return false;
+		}
+	}
+
+	public boolean loginUser(LoginUserDto loginUser) {
+
+		try {
+			User user = userRepository.findByEmail(loginUser.getEmail());
+			RegisterUserDto userDetails = userMapper.userToRegisterUserDto(user);
+
+			if (userDetails.getPassword().equals(loginUser.getPassword())) {
+				log.info("User logged in successfully: {}", loginUser.getEmail());
+				return true;
+			} else {
+				log.warn("User authentication failed for email: {}", loginUser.getEmail());
+				return false;
+			}
+		} catch (Exception e) {
+			log.error("Error occurred during user authentication.", e);
+			return false;
+		}
+	}
 }
