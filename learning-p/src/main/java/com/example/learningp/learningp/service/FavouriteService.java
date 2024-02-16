@@ -18,70 +18,62 @@ import com.example.learningp.learningp.entity.User;
 import com.example.learningp.learningp.repository.CourseRepository;
 import com.example.learningp.learningp.repository.UserRepository;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class FavouriteService {
-	
-	private static final Logger logger = LoggerFactory.getLogger(FavouriteService.class);
-  
-   @Autowired
-   private CourseRepository courseRepository;
-   
-   @Autowired
-   private UserRepository userRepository;
-   
-   public ResponseEntity<Map<String,String>> makeFavourite(FavouriteDto favouriteDto){
-	   Map<String, String> response = new HashMap<>();
-	   
-	   Optional<Courses> course = courseRepository.findById(favouriteDto.getCourseId());
-	   String email = favouriteDto.getEmail();
-	   User user = userRepository.findByEmail(email);
-	   
-	   if(user == null || course.isEmpty()) {
-		   response.put("Message", "Validation error");
-		   logger.error("Failed to add course to favourites. Validation error.");
-		   return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-	   }
-	   
-	   Set<Courses> favourite = user.getFavourites();
-	   favourite.add(course.get());
-	   user.setFavourites(favourite);
-	   userRepository.save(user);
-	   
-	   response.put("Message", "Course added to favourites.");
-	   logger.info("Course added to favourites. CourseId: {}, User: {}", favouriteDto.getCourseId(), email);
-	   return new ResponseEntity<>(response, HttpStatus.OK);
-   }
-   
-   public ResponseEntity<Map<String, String>> removeFavourite(FavouriteDto favouriteDto){
-	   Map<String, String> response = new HashMap<>();
-	   
-	   Optional<Courses> course = courseRepository.findById(favouriteDto.getCourseId());
-	   String email = favouriteDto.getEmail();
-	   User user = userRepository.findByEmail(email);
-	   
-	   if(user == null || course.isEmpty()) {
-		   response.put("Message", "Something went wrong");
-		   logger.info("Course added to favourites. CourseId: {}, User: {}", favouriteDto.getCourseId(), email);
-		   return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-	   }
-	   
-	   Set<Courses> favourite = user.getFavourites();
-	   
-	   try {
-		   favourite.remove(course.get());
-		   logger.info("Course removed from favourites. CourseId: {}, User: {}", favouriteDto.getCourseId(), email);
-	   }
-	   catch(Exception e) {
-		   logger.error("Failed to remove course from favourites.", e);
-		   response.put("Error", e.toString());
-		   return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-	   }
-	   
-	   user.setFavourites(favourite);
-	   userRepository.save(user);
-	   
-	   response.put("Message", "Course removed from favourites");
-	   return new ResponseEntity<>(response, HttpStatus.OK);
-   }
-   
+
+	@Autowired
+	private CourseRepository courseRepository;
+
+	@Autowired
+	private UserRepository userRepository;
+
+	public boolean makeFavourite(FavouriteDto favouriteDto) {
+
+		Optional<Courses> course = courseRepository.findById(favouriteDto.getCourseId());
+		String email = favouriteDto.getEmail();
+		User user = userRepository.findByEmail(email);
+
+		if (user == null || course.isEmpty()) {
+			log.error("Failed to add course to favourites. Validation error.");
+			return false;
+		}
+
+		Set<Courses> favourite = user.getFavourites();
+		favourite.add(course.get());
+		user.setFavourites(favourite);
+		userRepository.save(user);
+
+		log.info("Course added to favourites. CourseId: {}, User: {}", favouriteDto.getCourseId(), email);
+		return true;
+	}
+
+	public boolean removeFavourite(FavouriteDto favouriteDto) {
+
+		Optional<Courses> course = courseRepository.findById(favouriteDto.getCourseId());
+		String email = favouriteDto.getEmail();
+		User user = userRepository.findByEmail(email);
+
+		if (user == null || course.isEmpty()) {
+			log.info("Course added to favourites. CourseId: {}, User: {}", favouriteDto.getCourseId(), email);
+			return false;
+		}
+
+		Set<Courses> favourite = user.getFavourites();
+
+		try {
+			favourite.remove(course.get());
+			log.info("Course removed from favourites. CourseId: {}, User: {}", favouriteDto.getCourseId(), email);
+		} catch (Exception e) {
+			log.error("Failed to remove course from favourites.", e);
+			return false;
+		}
+
+		user.setFavourites(favourite);
+		userRepository.save(user);
+		return true;
+	}
+
 }
