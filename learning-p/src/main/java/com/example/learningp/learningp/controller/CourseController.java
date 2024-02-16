@@ -29,7 +29,15 @@ public class CourseController {
 
 	@PostMapping("/create")
 	public ResponseEntity<?> createCourses(@Valid @RequestBody CourseDto courseDto) {
-		return courseService.addCourse(courseDto);
+		boolean create = courseService.addCourse(courseDto);
+		HashMap<String, String> response = new HashMap<>();
+		if (create) {
+			response.put("Message", "Course added successfully");
+			return new ResponseEntity<>(response, HttpStatus.CREATED);
+		} else {
+			response.put("Message", "Some error occurred");
+			return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+		}
 	}
 
 	@PostMapping("/view")
